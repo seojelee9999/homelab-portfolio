@@ -50,3 +50,6 @@ jobs:
           docker run --rm --network none --entrypoint php \
             --volume "$PWD/scripts:/checks:ro" \
             "$image" -l /checks/check_authoring.php
+          docker run --rm --network none --entrypoint php \
+            --volume "$PWD/deploy/theme:/checks:ro" \
+            "$image" -l /checks/lang/ko/entities.php

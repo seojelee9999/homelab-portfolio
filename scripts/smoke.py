@@ -64,6 +64,9 @@ def main():
                 denied_code, denied_headers, _ = get(link)
                 destination = denied_headers.get('Location', '')
                 assert denied_code == 403 or (denied_code in (302, 303) and destination in (base, base + '/', base + '/login')), 'Guest can access editor'
+        if args.authoring:
+            assert '기술 분류' in body, 'Work-note theme missing'
+            assert '최근에 읽은 책' not in body and '많이 읽은 책' not in body, 'Reading lists still visible'
     code, headers, body = get(base + '/login')
     assert code == 200
     page = Page(body)

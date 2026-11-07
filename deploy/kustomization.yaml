@@ -20,6 +20,10 @@ configMapGenerator:
       - content/troubleshooting.md
       - content/learning.md
       - content/stack.md
+  - name: portfolio-theme
+    files:
+      - theme/lang/ko/entities.php
+      - theme/common/view-blocks.blade.php
 generatorOptions:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"

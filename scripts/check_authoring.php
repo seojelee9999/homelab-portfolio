@@ -30,12 +30,18 @@ $oldHomepage = $settings->get('app-homepage');
 DB::beginTransaction();
 try {
     $settings->remove('portfolio-authoring-v1');
+    $settings->remove('portfolio-work-notes-v1');
     $settings->put('app-homepage-type', 'default');
     $seed = seedPortfolioAuthoring(__DIR__ . '/content');
+    configurePortfolioWorkNotes();
+    $terms = require __DIR__ . '/theme/lang/ko/entities.php';
+    expect($terms['books'] === '기술 분류' && $terms['shelves'] === '작업 공간', 'Work-note terminology missing');
     expect($seed['created'] && count($seed['books']) === 8 && count($seed['chapters']) === 28,
         'Workspace hierarchy mismatch');
     expect($settings->get('app-homepage-type') === 'page', 'Homepage not selected');
     $home = Page::findOrFail($seed['home']);
+    expect(str_contains($home->markdown, '구성도 / 그림 그리기') && !str_contains($home->markdown, '책이나'),
+        'Work-note guide upgrade failed');
     expect(str_contains($home->html, '/portfolio/books/') && str_contains($home->html, '/create-page'),
         'Subpath authoring links missing');
     $repo = app(PageRepo::class);

@@ -35,7 +35,7 @@ kubectl -n portfolio exec deployment/portfolio-bookstack -- php /app/www/artisan
 4. 백업 당시 maintenance 상태 파일이 포함될 수 있으므로 앱에서 `php /app/www/artisan up`을 실행합니다.
 5. 관리자 로그인, 공개 읽기, 익명 쓰기 거부, 이미지·첨부파일, 검색을 확인한 뒤 운영 라우팅을 전환합니다.
 
-초기화 완료 상태는 DB의 `portfolio-public-configured-v1`, `portfolio-authoring-v1` 설정과 `/config/.portfolio-initialized-v1` 파일에 저장됩니다. 둘을 포함해 복원해야 최초 설치 설정이 다시 적용되지 않습니다. 기본 `admin@admin.com/password` 계정을 다시 만들지 마세요.
+초기화 완료 상태는 DB의 `portfolio-public-configured-v1`, `portfolio-authoring-v1`, `portfolio-work-notes-v1` 설정과 `/config/.portfolio-initialized-v1` 파일에 저장됩니다. 둘을 포함해 복원해야 최초 설치 설정이 다시 적용되지 않습니다. 기본 `admin@admin.com/password` 계정을 다시 만들지 마세요.
 
 ## 업데이트
 
@@ -50,3 +50,5 @@ kubectl -n portfolio exec deployment/portfolio-bookstack -- php /app/www/artisan
 `deploy/content`는 최초 생성용 양식입니다. 초기화 후에는 BookStack의 `작성 가이드와 양식` 책에서 템플릿을 수정합니다. Git의 초기 양식 변경을 기존 문서에 덮어쓰지 않습니다. `portfolio-authoring-v1` 설정을 지우면 전체 초기 공간이 추가 생성되므로 재생성 목적으로 삭제하지 마세요. 추가 기술은 화면에서 책을 만들고 챕터별 기본 양식을 연결합니다.
 
 이미지 버전 변경 시 `python3 scripts/check_authoring.py`를 테스트 환경에서 실행해 내부 저장 로직 호환성을 확인합니다. 이 검사는 DB 트랜잭션 안에서 임시 문서 작성·수정·권한·중복 방지를 확인하고 전부 롤백합니다. DB 자동 증가 번호에는 빈 구간이 생길 수 있습니다.
+
+`deploy/theme`는 한국어 분류 용어와 열람/인기 목록 숨김을 담당합니다. 그림 편집은 `DRAWIO` 환경변수로 명시적으로 허용하며 나머지 외부 서비스 비활성화 설정은 유지합니다. 별도 diagrams.net 서버를 운영한다면 `DRAWIO` 주소를 변경할 수 있습니다. 테마가 참조하는 블록 클래스와 번역 키도 이미지 업데이트 때 확인합니다.

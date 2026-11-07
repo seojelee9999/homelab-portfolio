@@ -5,6 +5,7 @@ use BookStack\Entities\Repos\BookRepo;
 use BookStack\Entities\Repos\BookshelfRepo;
 use BookStack\Entities\Repos\ChapterRepo;
 use BookStack\Entities\Repos\PageRepo;
+use BookStack\Entities\Models\Page;
 use BookStack\Settings\SettingService;
 use BookStack\Users\Models\User;
 use Illuminate\Contracts\Console\Kernel;
@@ -112,6 +113,37 @@ function seedPortfolioAuthoring(string $contentPath): array
     });
 }
 
+/** Update only known starter-guide wording when upgrading the first workspace. */
+function configurePortfolioWorkNotes(): void
+{
+    $settings = app(SettingService::class);
+    if ($settings->get('portfolio-work-notes-v1', false)) {
+        return;
+    }
+    $admin = User::query()->whereHas('roles', fn ($q) => $q->where('system_name', 'admin'))
+        ->orderBy('id')->firstOrFail();
+    auth()->setUser($admin);
+    DB::transaction(function () use ($settings): void {
+        $homeId = (int) explode(':', (string) $settings->get('app-homepage', '0:'))[0];
+        $home = Page::find($homeId);
+        if ($home && $home->name === '홈랩 기록 시작하기'
+            && str_contains($home->markdown, '## 기술별 기록과 작성')) {
+            $markdown = strtr($home->markdown, [
+                '책·챕터 목록' => '기술 분류·기록 유형 목록',
+                '책의 양식' => '공간의 양식',
+                '책이나 페이지의 권한' => '기술 분류나 작업 노트의 권한',
+                '코드 블록에는 언어를 지정하고, 스크린샷과 로그 파일은 편집기의 이미지·첨부 기능으로 추가합니다.' =>
+                    '코드 블록에는 언어를 지정합니다. 상단의 **구성도 / 그림 그리기**로 네트워크 구조와 작업 흐름을 그려 넣고, **사진 / 스크린샷 업로드**로 사진을 첨부하세요. 로그 파일은 사이드바의 첨부 기능으로 추가합니다.',
+            ]);
+            if ($markdown !== $home->markdown) {
+                app(PageRepo::class)->update($home, ['markdown' => $markdown,
+                    'changelog' => '작업 노트 용어와 구성도·사진 작성 안내 반영']);
+            }
+        }
+        $settings->put('portfolio-work-notes-v1', 'true');
+    });
+}
+
 // The callable function is reused by the rollback-only integration check.
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     try {
@@ -123,6 +155,7 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
             throw new RuntimeException('Authoring initialization is already running');
         }
         $result = seedPortfolioAuthoring(getenv('PORTFOLIO_CONTENT_PATH') ?: '/portfolio-content');
+        configurePortfolioWorkNotes();
         DB::selectOne("SELECT RELEASE_LOCK('portfolio-authoring-v1')");
         echo $result['created'] ? "Portfolio authoring workspace created.\n" : "Portfolio authoring workspace already initialized; content preserved.\n";
     } catch (Throwable $error) {

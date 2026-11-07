@@ -19,6 +19,7 @@ def main():
         tar.add(ROOT / 'deploy/bootstrap/authoring.php', arcname='authoring.php')
         tar.add(ROOT / 'scripts/check_authoring.php', arcname='check_authoring.php')
         tar.add(ROOT / 'deploy/content', arcname='content')
+        tar.add(ROOT / 'deploy/theme', arcname='theme')
     # Fixed command; no credentials or document content in output or shell arguments.
     shell = """
 set -eu
@@ -28,6 +29,7 @@ tar -xf - -C "$check_dir"
 chmod -R a+rX "$check_dir"
 php -l "$check_dir/authoring.php"
 php -l "$check_dir/check_authoring.php"
+php -l "$check_dir/theme/lang/ko/entities.php"
 s6-setuidgid abc php "$check_dir/check_authoring.php"
 """
     command = 'kubectl -n portfolio exec -i deployment/portfolio-bookstack -- sh -c ' + shlex.quote(shell)

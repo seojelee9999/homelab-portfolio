@@ -43,6 +43,8 @@ def validate():
     assert environment['APP_URL'] == 'https://akibaha.shop/portfolio'
     assert environment['SESSION_SECURE_COOKIE'] == 'true'
     assert environment['STORAGE_IMAGE_TYPE'] == 'local_secure_restricted'
+    assert environment['APP_THEME'] == 'homelab'
+    assert environment['DRAWIO'].startswith('https://embed.diagrams.net/?embed=1')
     assert '/run/portfolio-ready' in container['readinessProbe']['exec']['command'][-1]
     configmaps = [r['data'] for r in resources if r['kind'] == 'ConfigMap']
     bootstrap = next(data for data in configmaps if '99-portfolio.sh' in data)
