@@ -1,0 +1,49 @@
+name: Validate portfolio
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portfolio-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install validation dependency
+        run: python3 -m pip install 'PyYAML==6.0.3'
+      - name: Check Python and shell syntax
+        run: |
+          python3 -m py_compile scripts/*.py
+          bash -n deploy/bootstrap/99-portfolio.sh
+      - name: Validate manifests and installer safeguards
+        run: |
+          kubectl version --client
+          python3 scripts/validate.py
+          python3 -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Verify registration-only patch is current
+        run: |
+          python3 scripts/prepare_patch.py
+          git diff --exit-code -- gitops/homelab-argocd.patch
+      - name: Check bootstrap PHP with the deployed BookStack image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=$(python3 -c 'import yaml; docs=yaml.safe_load_all(open("deploy/bookstack.yaml")); print(next(d for d in docs if d["kind"] == "Deployment")["spec"]["template"]["spec"]["containers"][0]["image"])')
+          for file in deploy/bootstrap/*.php; do
+            docker run --rm --network none --entrypoint php \
+              --volume "$PWD/deploy/bootstrap:/checks:ro" \
+              "$image" -l "/checks/$(basename "$file")"
+          done

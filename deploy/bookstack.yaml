@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portfolio-bookstack-data
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-database
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio-bookstack
+spec:
+  selector:
+    app: portfolio-bookstack
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio-bookstack
+spec:
+  replicas: 1
+  # A single writer for local uploads, migrations, and ReadWriteOnce storage.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: portfolio-bookstack
+  template:
+    metadata:
+      labels:
+        app: portfolio-bookstack
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bookstack
+          image: lscr.io/linuxserver/bookstack:v26.09.2-ls295
+          # LSIO init starts as root; PHP/nginx workers use PUID/PGID.
+          # Do not force runAsNonRoot or replace the upstream /init entrypoint.
+          ports:
+            - name: http
+              containerPort: 80
+          envFrom:
+            - secretRef:
+                name: portfolio-bookstack
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: Asia/Seoul
+            - name: APP_URL
+              value: https://akibaha.shop/portfolio
+            - name: APP_LANG
+              value: ko
+            - name: APP_DISPLAY_TIMEZONE
+              value: Asia/Seoul
+            - name: APP_ENV
+              value: production
+            - name: APP_DEBUG
+              value: "false"
+            - name: DB_HOST
+              value: portfolio-mariadb
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: bookstack
+            - name: DB_USERNAME
+              value: bookstack
+            - name: SESSION_COOKIE_NAME
+              value: portfolio_session
+            - name: SESSION_SECURE_COOKIE
+              value: "true"
+            - name: STORAGE_TYPE
+              value: local_secure_restricted
+            - name: STORAGE_IMAGE_TYPE
+              value: local_secure_restricted
+            - name: DISABLE_EXTERNAL_SERVICES
+              value: "true"
+          volumeMounts:
+            - name: data
+              mountPath: /config
+            - name: bootstrap
+              mountPath: /custom-cont-init.d/99-portfolio.sh
+              subPath: 99-portfolio.sh
+              readOnly: true
+            - name: bootstrap
+              mountPath: /portfolio-bootstrap
+              readOnly: true
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - test -f /run/portfolio-ready && curl -fsS --max-time 4 -o /dev/null http://127.0.0.1/login
+            failureThreshold: 90
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - test -f /run/portfolio-ready && curl -fsS --max-time 4 -o /dev/null http://127.0.0.1/login
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: portfolio-bookstack-data
+        - name: bootstrap
+          configMap:
+            name: portfolio-bootstrap
+            defaultMode: 0555

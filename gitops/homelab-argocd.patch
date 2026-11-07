@@ -1,0 +1,12 @@
+diff --git a/apps/portfolio.json b/apps/portfolio.json
+new file mode 100644
+--- /dev/null
++++ b/apps/portfolio.json
+@@ -0,0 +1,7 @@
++{
++  "appName": "portfolio",
++  "repoURL": "https://github.com/seojelee9999/homelab-portfolio.git",
++  "targetRevision": "main",
++  "manifest_path": "deploy",
++  "namespace": "portfolio"
++}

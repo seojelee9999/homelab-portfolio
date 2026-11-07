@@ -1,0 +1,43 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: portfolio
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: tunnel-gateway
+      namespace: gateway-system
+      sectionName: http
+  hostnames:
+    - akibaha.shop
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /portfolio
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            port: 443
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /portfolio/
+            statusCode: 302
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /portfolio
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: portfolio-bookstack
+          port: 80
+          weight: 1
