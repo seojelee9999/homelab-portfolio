@@ -2,7 +2,7 @@
 
 학습·트러블슈팅 기록을 위한 BookStack 배포 구성입니다. 대상 주소는 **https://akibaha.shop/portfolio/** 입니다.
 
-**현재 상태: 배포 파일 준비 및 로컬 검증 완료. 클러스터 설치·Git push·관리자 계정 생성은 아직 실행하지 못했습니다.** 상세한 검증 범위는 [docs/validation.md](docs/validation.md)에 있습니다.
+**현재 상태: BookStack과 MariaDB가 홈랩 클러스터에서 실행 중입니다.** 작성 공간 커스터마이징과 검증 범위는 [docs/validation.md](docs/validation.md)에 기록합니다.
 
 ## 사용 방식
 
@@ -12,7 +12,17 @@
 - 기본 언어: 한국어. 기본 편집기: Markdown. 화면 이름: Homelab Notes.
 - 책·챕터·페이지별로 공개 범위를 조정할 수 있습니다. 이미지도 페이지 권한을 따르는 `local_secure_restricted` 저장 방식을 사용합니다.
 
-권장 구조: `홈랩` 책장 아래 `Kubernetes`, `네트워크`, `CI/CD`, `Linux` 책을 만들고 각 책에서 `학습`, `트러블슈팅` 챕터를 사용하세요. [학습 양식](templates/learning.md)과 [트러블슈팅 양식](templates/troubleshooting.md)을 새 페이지에 붙여 넣고 페이지 템플릿으로 저장하면 재사용할 수 있습니다. 양식 파일은 제공했으며 서버에 콘텐츠를 자동 생성하지는 않습니다.
+## 바로 기록하기
+
+1. [로그인](https://akibaha.shop/portfolio/login)에서 관리자 계정으로 로그인합니다.
+2. 첫 화면의 기술별 표에서 **구축 기록 / 트러블슈팅 / 학습 노트 / 기술 스택**의 **작성**을 누릅니다.
+3. 자동 입력된 양식에 내용을 채우고 저장합니다. Markdown 코드 블록, 이미지, 파일 첨부, 태그, 검색, 변경 이력을 사용할 수 있습니다.
+
+기본 책장은 **홈랩 기술 기록**입니다. `홈랩`, `네트워크`, `OpenStack`, `Kubernetes`, `Linux`, `스토리지`, `자동화 · GitOps` 책에 각각 네 종류의 기록 공간이 있습니다. `작성 가이드와 양식` 책에서 시작 안내와 네 개의 페이지 템플릿을 관리합니다. 빈 공간은 사용자가 실제 경험을 기록하도록 제공하며 예시 장애나 구축 이력을 실적으로 채워 넣지 않습니다.
+
+BookStack의 기존 작성·첨부·권한·검색 기능을 사용합니다. 새 CMS나 별도의 편집기 서버는 추가하지 않습니다. 편집기 사이드바의 템플릿에서 다른 양식을 선택할 수 있고, 책·챕터의 편집 화면에서 기본 양식을 변경할 수 있습니다. [상세 작성 안내](docs/authoring.md)를 참고하세요.
+
+초기 양식 원본은 [deploy/content](deploy/content)에 있습니다. 최초 한 번 `authoring.php`가 BookStack 저장 로직으로 책장·책·챕터·페이지 템플릿과 안내 화면을 만듭니다. DB 트랜잭션과 `portfolio-authoring-v1` 완료 표시를 사용하므로 실패 시 전부 롤백하며, 재시작할 때 사용자 문서나 수정한 양식을 덮어쓰거나 삭제한 분류를 다시 만들지 않습니다. 기존에 별도 첫 화면을 지정했다면 그 설정도 유지합니다.
 
 ## 구성
 
@@ -32,7 +42,7 @@
   deploy/                          # 운영 매니페스트와 bootstrap 코드
   .github/workflows/ci.yml          # PR/main 검증
   scripts/                         # 설치 및 검증 도구
-  templates/                       # 학습·트러블슈팅 양식
+  deploy/content/                  # 구축·트러블슈팅·학습·기술 스택 초기 양식
   gitops/apps/portfolio.json        # homelab에 등록할 파일의 원본
 
 ~/homelab-argocd/                   # github.com/seojelee9999/homelab-argocd
@@ -47,13 +57,13 @@ BookStack 본체는 upstream 이미지를 사용하고, 현재 저장소에서 �
 
 CD는 기존 ApplicationSet이 생성하는 Argo CD Application이 담당합니다. 등록된 앱 저장소의 main `deploy/`를 읽고 auto-sync/prune/selfHeal합니다. CI가 클러스터 자격증명을 보유하거나 homelab 저장소에 매번 커밋할 필요는 없습니다.
 
-**Argo CD는 GitHub Actions 완료를 기다리지 않습니다.** CI 통과 후에만 배포하려면 GitHub main 보호 규칙에서 `validate` 상태 검사를 필수로 지정하고, PR merge만 허용하며 직접 push/우회를 제한해야 합니다. 워크플로 파일은 준비했지만 GitHub 원격 저장소 생성, CI 실행, 브랜치 보호 규칙 설정은 아직 수행하지 않았습니다.
+**Argo CD는 GitHub Actions 완료를 기다리지 않습니다.** CI 통과 후에만 배포하려면 GitHub main 보호 규칙에서 `validate` 상태 검사를 필수로 지정하고, PR merge만 허용하며 직접 push/우회를 제한해야 합니다. 원격 저장소와 Argo CD 등록은 완료되어 있습니다. 브랜치 보호 규칙 설정 여부는 별도로 확인해야 합니다.
 
 `/portfolio`는 HTTPS 443의 `/portfolio/`로 리다이렉트됩니다. Gateway는 `/portfolio` 접두사를 제거하고 앱에 전달하며, 앱의 `APP_URL`은 외부 전체 주소를 유지합니다. 세션 이름은 `portfolio_session`, 쿠키 경로는 APP_URL에서 계산된 `/portfolio`, Secure/HttpOnly/SameSite=lax입니다.
 
 ## 설치
 
-현재 작업 세션은 homelab 저장소 쓰기와 추가 네트워크 작업을 허용하지 않습니다. 다음 명령은 해당 권한이 있는 로컬 터미널에서 실행할 수 있도록 준비했습니다. 스크립트는 SSM에 필요한 비밀값을 생성하고, 지정한 GitOps 파일만 커밋·push하며 Argo CD와 외부 HTTP 응답을 확인합니다.
+기존 운영 환경에는 다시 설치할 필요가 없습니다. 새 환경을 준비할 때 아래 절차를 사용합니다. 설치 스크립트는 SSM에 필요한 비밀값을 생성하고, 지정한 GitOps 파일만 커밋·push하며 Argo CD와 외부 HTTP 응답을 확인합니다.
 
 사전 조건:
 
@@ -66,13 +76,13 @@ CD는 기존 ApplicationSet이 생성하는 Argo CD Application이 담당합니�
 - AWS 프로필: 새 경로에 `ssm:GetParameter`, `ssm:PutParameter` 및 KMS 권한. ESO identity도 새 경로 읽기·복호화 가능. 쓰기 권한이 없으면 Secret 생성 단계에서 중단됩니다.
 - 기존 ApplicationSet, Gateway, ESO, Longhorn 정상. PV 요청량 15Gi에 Longhorn 복제본과 여유 공간을 고려한 실제 디스크 공간 필요.
 
-먼저 GitHub에 `seojelee9999/homelab-portfolio` 저장소를 준비하고 현재 디렉터리의 전체 파일을 main으로 게시합니다. 이 작업 세션의 `.git`은 비어 있는 읽기 전용 디렉터리라 여기서 Git 초기화·원격 등록은 수행하지 못했습니다. 쓰기 권한이 있는 로컬 터미널에서, 아직 저장소가 초기화되지 않은 경우 다음 순서로 준비합니다.
+먼저 GitHub에 `seojelee9999/homelab-portfolio` 저장소를 준비하고 현재 디렉터리의 전체 파일을 main으로 게시합니다. 현재 저장소는 이미 초기화되어 있습니다. 별도의 새 체크아웃이 Git 저장소가 아닌 경우에만 다음 순서로 준비합니다.
 
 ```bash
 cd ~/portfolio
 git init -b main
 git remote add origin git@github.com:seojelee9999/homelab-portfolio.git
-git add .gitignore README.md .github deploy docs gitops scripts templates
+git add .gitignore README.md .github deploy docs gitops scripts
 git commit -m 'Add BookStack portfolio deployment and validation CI'
 git push -u origin main
 ```
@@ -90,7 +100,7 @@ python3 scripts/install.py --admin-email lsj2sj03@gmail.com
 2. SSM SecureString 5개 준비. 기존 값은 재사용하고 덮어쓰지 않습니다. 이미 PVC가 있는데 Secret이 없으면 복구를 요구하며 중단합니다.
 3. homelab 저장소에 `apps/portfolio.json`만 커밋·push.
 4. Argo CD가 portfolio 저장소의 `deploy/`에서 DB → 앱 → Route 순서로 동기화.
-5. 앱 초기화에서 기본 관리자 계정을 무작위 비밀번호와 지정한 이메일로 교체하고 Public 역할에는 읽기 권한만 부여합니다. 초기화 완료 전에는 readiness가 통과하지 않습니다.
+5. 앱 초기화에서 기본 관리자 계정을 무작위 비밀번호와 지정한 이메일로 교체하고 Public 역할에는 읽기 권한만 부여합니다. 작성 공간과 기본 양식도 준비합니다. 초기화 완료 전에는 readiness가 통과하지 않습니다.
 6. portfolio 저장소의 게시 SHA를 기준으로 Argo CD Healthy/Synced와 앱 소스 경로를 확인하고, 외부 HTTP 읽기·로그인 폼·정적 파일·쿠키·비로그인 관리 접근 제한 검사.
 
 실패 시 자동으로 기존 PVC나 SSM 값을 삭제하지 않습니다. Git push 실패 후에는 로컬 커밋을 확인하고 정상적으로 push한 뒤 Argo CD를 확인하세요. 강제 push나 자동 재설정은 하지 않습니다. 최초 설치용 스크립트이므로 기존 앱 등록 정보가 다르면 덮어쓰지 않고 중단합니다. 설치 확인 중 portfolio main이 갱신되면 확인 중인 SHA와 달라질 수 있으므로 설치가 끝날 때까지 추가 게시를 피하세요.
@@ -125,7 +135,8 @@ ssh -F /dev/null -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes ubuntu@192.168.55.10
 ```bash
 python3 scripts/validate.py
 python3 -m unittest discover -s scripts -p 'test_*.py' -v
-python3 scripts/smoke.py  # 실제 설치 후 실행
+python3 scripts/smoke.py --authoring  # 기본 작성 홈을 사용하는 배포
+python3 scripts/check_authoring.py   # 운영 런타임에서 검증 후 DB 변경 전부 롤백
 kubectl -n argocd get application portfolio
 kubectl -n portfolio get pods,pvc,externalsecrets
 kubectl -n portfolio describe httproute portfolio

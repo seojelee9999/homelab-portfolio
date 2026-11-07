@@ -5,4 +5,5 @@ set -euo pipefail
 rm -f /run/portfolio-ready
 s6-setuidgid abc php /portfolio-bootstrap/initialize.php
 s6-setuidgid abc php /portfolio-bootstrap/configure.php
+s6-setuidgid abc php /portfolio-bootstrap/authoring.php
 touch /run/portfolio-ready

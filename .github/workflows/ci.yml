@@ -47,3 +47,6 @@ jobs:
               --volume "$PWD/deploy/bootstrap:/checks:ro" \
               "$image" -l "/checks/$(basename "$file")"
           done
+          docker run --rm --network none --entrypoint php \
+            --volume "$PWD/scripts:/checks:ro" \
+            "$image" -l /checks/check_authoring.php

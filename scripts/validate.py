@@ -44,6 +44,13 @@ def validate():
     assert environment['SESSION_SECURE_COOKIE'] == 'true'
     assert environment['STORAGE_IMAGE_TYPE'] == 'local_secure_restricted'
     assert '/run/portfolio-ready' in container['readinessProbe']['exec']['command'][-1]
+    configmaps = [r['data'] for r in resources if r['kind'] == 'ConfigMap']
+    bootstrap = next(data for data in configmaps if '99-portfolio.sh' in data)
+    content = next(data for data in configmaps if 'stack.md' in data)
+    assert 'authoring.php' in bootstrap and 'authoring.php' in bootstrap['99-portfolio.sh']
+    assert set(content) == {'build.md', 'troubleshooting.md', 'learning.md', 'stack.md'}
+    assert all(value.strip() for value in content.values())
+    assert any(m['mountPath'] == '/portfolio-content' and m['readOnly'] for m in container['volumeMounts'])
     secrets = [r for r in resources if r['kind'] == 'ExternalSecret']
     keys = {d['secretKey'] for r in secrets for d in r['spec']['data']}
     assert keys == {'APP_KEY', 'DB_PASSWORD', 'MARIADB_ROOT_PASSWORD', 'INITIAL_ADMIN_EMAIL', 'INITIAL_ADMIN_PASSWORD'}

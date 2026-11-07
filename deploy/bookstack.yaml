@@ -102,6 +102,9 @@ spec:
             - name: bootstrap
               mountPath: /portfolio-bootstrap
               readOnly: true
+            - name: content
+              mountPath: /portfolio-content
+              readOnly: true
           startupProbe:
             exec:
               command:
@@ -131,6 +134,9 @@ spec:
             limits:
               memory: 1Gi
       volumes:
+        - name: content
+          configMap:
+            name: portfolio-content
         - name: data
           persistentVolumeClaim:
             claimName: portfolio-bookstack-data

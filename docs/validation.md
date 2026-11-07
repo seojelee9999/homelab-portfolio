@@ -1,24 +1,17 @@
 # 검증 기록 — 2026-11-07
 
-## 완료
+## 기존 운영 상태
 
-- 기존 `~/schedule/deploy`, `~/homelab-argocd`의 ApplicationSet/Envoy Gateway/SecretStore/StorageClass 설정 확인.
-- 최초 읽기 전용 SSH에서 Kubernetes 노드 3개 Ready, schedule Synced/Healthy, tunnel-gateway Programmed=True, `longhorn-database` Retain 확인. 이 조회 시점에 `/portfolio` HTTPRoute나 Argo Application은 없었습니다.
-- upstream 문서 및 소스로 하위 경로 APP_URL, 쿠키 경로, 파일 접근 권한, 초기 관리자, Public 역할, 초기화 스크립트 순서 확인.
-- `kubectl kustomize deploy`: 11개 리소스 렌더링 성공.
-- `python3 scripts/validate.py`: 네임스페이스, 스토리지 보존, Secret 참조, 고정 이미지 태그, Gateway 및 하위 경로, 초기화 readiness 검사 통과.
-- `python3 -m unittest discover -s scripts -p 'test_*.py' -v`: 총 10개 테스트 통과. Secret 생성/보존 보호 5개와 저장소 분리 검증 5개입니다. 저장소 분리 검증은 portfolio 소스 SHA 기준 배포 확인, 잘못된 소스·경로와 비정상 상태 거부, 미게시/수정 중인 소스 차단, 임시 Git 저장소에 등록 JSON 하나만 추가하고 기존 파일을 보존하는 패치 적용을 포함합니다.
-- Python 스크립트 컴파일, bootstrap Bash 구문 검사 통과.
-- `git -C ~/homelab-argocd apply --check ~/portfolio/gitops/homelab-argocd.patch`: 기존 저장소에 패치 적용 가능 확인. 실제 적용하지 않음.
-- 저장소 분리: `gitops/apps/portfolio.json`과 생성 패치를 `homelab-portfolio`의 main `deploy/`를 읽도록 변경. 설치 스크립트도 homelab 저장소에 `apps/portfolio.json`만 반영하도록 변경.
-- `.github/workflows/ci.yml` 추가: PR/main/수동 검증. 워크플로 YAML 및 각 Bash 실행 블록의 구문을 로컬 확인. GitHub에서 실제 실행하지는 않음.
+이번 작업 시작 시 BookStack/MariaDB Pod는 각각 Running/Ready, PVC 두 개는 Bound였으며 Argo CD portfolio는 `466422d`에서 Synced/Healthy였습니다. 이전 문서의 미설치 상태는 더 이상 현재 상태가 아니어서 수정했습니다.
 
-## 실행하지 못한 항목
+## 작성 공간 변경 검증
 
-초기 조회 이후 추가 SSH 연결은 `socket: Operation not permitted`, GitHub clone은 네트워크 DNS 제한으로 실패했습니다. 기존 SSH 승인 접두사를 사용한 권한 확장 요청도 세션의 `sandbox_approval=false` 정책 때문에 자동 거절되었습니다. `~/homelab-argocd`는 현재 세션의 쓰기 허용 경로에 포함되어 있지 않습니다.
+- `python3 scripts/validate.py`: 12개 리소스의 실제 Kustomize 렌더링, 초기 양식 ConfigMap/볼륨, readiness, 라우팅, Secret 참조 및 PVC 보호 검사 통과.
+- 기존 Python 테스트 10개, Python 컴파일, Bash 구문, Git diff 공백 검사 통과.
+- `python3 scripts/check_authoring.py`: 실행 중인 고정 BookStack 이미지에서 PHP 구문과 실제 MariaDB 통합 검증 통과. 8개 책·28개 챕터, 챕터별 기본 양식과 28개 초안 자동 입력, Markdown 저장·수정, 변경 이력과 검색용 본문, 하위 경로 작성 링크, 반복 실행 시 사용자 양식·홈 설정 보존, 익명 읽기 허용·쓰기 거부를 확인했습니다. 전체 DB 변경은 롤백하고 기존 문서 수·초기화 표시·홈페이지 설정 복원을 확인했습니다.
+- `python3 scripts/smoke.py`: 운영 주소의 공개 읽기, 로그인/CSRF 폼, 쿠키 보안·경로, 앱 정적 파일, 익명 관리·작성 접근 차단, 공개 가입 차단 검사 통과. 실제 응답에 맞춰 Cloudflare 분석 beacon을 앱 정적 파일 검사에서 제외하고, BookStack 공개 모드의 권한 거부 홈 리다이렉트를 검사하도록 수정했습니다.
+- CI에는 새 통합 검증 PHP 파일의 구문 검사를 추가했습니다. 실제 DB 통합 검사는 명시적으로 실행하며 CI에서 운영 클러스터에 접속하지 않습니다.
 
-따라서 SSM 생성, GitOps 커밋·push, Kubernetes 리소스 생성, 이미지 pull, 앱/DB 실행은 수행하지 않았습니다. 로컬 PHP·Docker 실행 환경도 없어 PHP bootstrap 및 DB migration의 실제 런타임 검증은 하지 못했습니다.
+## 검증 범위
 
-portfolio 경로의 `.git`도 비어 있는 읽기 전용 디렉터리입니다. `homelab-portfolio` 원격 저장소의 생성/존재 확인·소스 게시, 새 GitHub Actions 실행, main 보호 규칙 설정은 수행하지 못했습니다. CI를 필수 검사로 지정하지 않으면 Argo CD는 main 변경을 CI 결과와 독립적으로 배포합니다.
-
-배포 후 `scripts/smoke.py`로 외부 공개 읽기·로그인 폼·정적 파일·쿠키·관리 페이지 차단을 확인하도록 준비했습니다. 관리자 실제 로그인, 문서 생성·수정·검색, 이미지 업로드, 익명으로 해당 문서 읽기 및 수정 거부, 재시작 후 데이터 유지, 백업 복구는 아직 검증하지 않았습니다. 설치 완료 또는 운영 검증 완료로 해석하면 안 됩니다.
+실제 브라우저의 관리자 로그인·이미지/파일 업로드·시각적 배치, 백업 복구는 이번 자동 검증에 포함하지 않았습니다. Markdown 작성 로직은 운영 런타임의 DB 트랜잭션에서 검증했습니다. 자동 백업은 별도 구성 사항입니다. 초기화는 앱 내부 repository API를 사용하므로 BookStack 이미지 버전을 바꿀 때 통합 검증을 다시 실행해야 합니다.

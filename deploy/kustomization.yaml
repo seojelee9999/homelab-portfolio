@@ -13,6 +13,13 @@ configMapGenerator:
       - bootstrap/99-portfolio.sh
       - bootstrap/initialize.php
       - bootstrap/configure.php
+      - bootstrap/authoring.php
+  - name: portfolio-content
+    files:
+      - content/build.md
+      - content/troubleshooting.md
+      - content/learning.md
+      - content/stack.md
 generatorOptions:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
