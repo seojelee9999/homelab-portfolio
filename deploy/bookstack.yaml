@@ -149,6 +149,18 @@ spec:
                 path: lang/ko/entities.php
               - key: view-blocks.blade.php
                 path: common/view-blocks.blade.php
+              - key: functions.php
+                path: functions.php
+              - key: dashboard.blade.php
+                path: home/specific-page.blade.php
+              - key: head.blade.php
+                path: notes/head.blade.php
+              - key: icon.blade.php
+                path: notes/icon.blade.php
+              - key: topology.blade.php
+                path: notes/topology.blade.php
+              - key: notes.css
+                path: public/notes.css
         - name: content
           configMap:
             name: portfolio-content

@@ -15,7 +15,7 @@
 ## 바로 기록하기
 
 1. [로그인](https://akibaha.shop/portfolio/login)에서 관리자 계정으로 로그인합니다.
-2. 첫 화면의 기술별 표에서 **구축 기록 / 트러블슈팅 / 학습 노트 / 기술 스택**의 **작성**을 누릅니다.
+2. 첫 화면의 기술별 카드에서 **새 기록 작성**을 펼쳐 **구축 기록 / 트러블슈팅 / 학습 노트 / 기술 스택**을 선택합니다.
 3. 자동 입력된 양식에 내용을 채우고 저장합니다. Markdown 코드 블록, 구성도·그림 그리기, 사진 업로드, 파일 첨부, 태그, 검색, 변경 이력을 사용할 수 있습니다.
 
 기본 작업 공간은 **홈랩 기술 기록**입니다. `홈랩`, `네트워크`, `OpenStack`, `Kubernetes`, `Linux`, `스토리지`, `자동화 · GitOps` 기술 분류에 각각 네 종류의 기록 공간이 있습니다. `작성 가이드와 양식` 공간에서 시작 안내와 네 개의 페이지 템플릿을 관리합니다. 빈 공간은 사용자가 실제 경험을 기록하도록 제공하며 예시 장애나 구축 이력을 실적으로 채워 넣지 않습니다.
@@ -159,3 +159,9 @@ DB 덤프, `/config` 전체(첨부파일·설정), APP_KEY를 함께 백업해�
 - [이미지 접근 권한을 포함한 파일 저장 방식](https://www.bookstackapp.com/docs/admin/upload-config/)
 - [LinuxServer BookStack 설정](https://docs.linuxserver.io/images/docker-bookstack/)
 - [BookStack 이미지 릴리스](https://github.com/linuxserver/docker-bookstack/releases)
+
+## 작업 노트 UI
+
+첫 화면은 기술별 카드, 최근 작업 노트, 로그인한 사용자의 초안, 작성 양식으로 구성됩니다. 구성도 일러스트와 반응형 레이아웃을 사용하며 실제 열람 가능한 기록만 집계합니다. 방문자에게는 로그인 안내를, 작성 권한이 있는 사용자에게는 기록 유형별 작성 바로가기를 제공합니다. UI는 `deploy/theme`에서 관리하고 문서 데이터는 그대로 유지합니다.
+
+브라우저 점검은 Playwright 설치 후 `python3 scripts/browser_smoke.py`로 실행합니다. `--authenticated` 옵션은 이메일·비밀번호 JSON을 숨김 stdin으로 받아 편집기·테스트 이미지와 그림의 저장/읽기/삭제까지 점검합니다. 로그인 정보를 파일이나 명령행에 넣지 마세요. CI는 테마 PHP와 컴파일한 Blade 구문도 검사합니다.

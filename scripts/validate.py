@@ -53,6 +53,10 @@ def validate():
     assert set(content) == {'build.md', 'troubleshooting.md', 'learning.md', 'stack.md'}
     assert all(value.strip() for value in content.values())
     assert any(m['mountPath'] == '/portfolio-content' and m['readOnly'] for m in container['volumeMounts'])
+    theme = next(data for data in configmaps if 'notes.css' in data)
+    theme_volume = next(v for v in app['template']['spec']['volumes'] if v['name'] == 'theme')
+    assert {item['key'] for item in theme_volume['configMap']['items']} == set(theme)
+    assert {'functions.php', 'dashboard.blade.php', 'notes.css'} <= set(theme)
     secrets = [r for r in resources if r['kind'] == 'ExternalSecret']
     keys = {d['secretKey'] for r in secrets for d in r['spec']['data']}
     assert keys == {'APP_KEY', 'DB_PASSWORD', 'MARIADB_ROOT_PASSWORD', 'INITIAL_ADMIN_EMAIL', 'INITIAL_ADMIN_PASSWORD'}

@@ -24,6 +24,12 @@ configMapGenerator:
     files:
       - theme/lang/ko/entities.php
       - theme/common/view-blocks.blade.php
+      - theme/functions.php
+      - dashboard.blade.php=theme/home/specific-page.blade.php
+      - head.blade.php=theme/notes/head.blade.php
+      - icon.blade.php=theme/notes/icon.blade.php
+      - topology.blade.php=theme/notes/topology.blade.php
+      - theme/public/notes.css
 generatorOptions:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"

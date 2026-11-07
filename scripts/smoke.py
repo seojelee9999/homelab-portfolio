@@ -56,9 +56,9 @@ def main():
         code, _, body = get(base + path)
         assert code == 200, f'Anonymous reading failed: {path} ({code})'
         if args.authoring and path == '/':
-            assert '홈랩 기술 기록' in body and 'OpenStack' in body, 'Authoring homepage missing'
+            assert 'data-notes-dashboard' in body and 'OpenStack' in body, 'Authoring dashboard missing'
             create_links = {link for link in Page(body).links if link.endswith('/create-page')}
-            assert len(create_links) == 28, 'Expected 28 authoring shortcuts'
+            assert not create_links, 'Guest should see login, not write actions'
             for link in create_links:
                 assert link.startswith(base + '/books/'), 'Authoring link escaped application path'
                 denied_code, denied_headers, _ = get(link)

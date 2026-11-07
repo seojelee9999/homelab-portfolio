@@ -51,5 +51,6 @@ jobs:
             --volume "$PWD/scripts:/checks:ro" \
             "$image" -l /checks/check_authoring.php
           docker run --rm --network none --entrypoint php \
-            --volume "$PWD/deploy/theme:/checks:ro" \
-            "$image" -l /checks/lang/ko/entities.php
+            --volume "$PWD/deploy/theme:/checks/theme:ro" \
+            --volume "$PWD/scripts:/checks/scripts:ro" \
+            "$image" /checks/scripts/check_theme.php
